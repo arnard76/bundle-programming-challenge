@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import "./mocks";
 import axios from "axios";
@@ -7,6 +7,13 @@ import { Task } from "./types";
 const POLL_INTERVAL = 4000; // in milliseconds
 const MAX_FILE_SIZE = 2; // in megabytes
 const MAX_FILE_SIZE_IN_BYTES = MAX_FILE_SIZE * 1024 * 1024;
+
+const statusColours: { [status in Task["status"]]: string } = {
+  "in progress": "#d4f518",
+  cancelled: "#f78f8f",
+  completed: "#58ed51",
+};
+
 let intervals: { [taskId: Task["id"]]: NodeJS.Timer | null } = {};
 
 function App() {
@@ -15,17 +22,24 @@ function App() {
   const [tasks, setTasks] = useState([] as Task[]);
   const fileInputRef = useRef<any>(undefined);
 
+  function stopPolling(taskId: Task["id"]) {
+    let intervalId = intervals[taskId];
+    if (intervalId !== null) clearInterval(intervalId);
+    intervals[taskId] = null;
+  }
+
   async function pollTaskStatus(taskId: Task["id"]) {
     const taskResult = await axios.get<{ status: Task["status"] }>(
       `/status/${taskId.toString()}`
     );
 
-    if (taskResult.data.status === "completed") {
-      let intervalId = intervals[taskId];
-      if (intervalId !== null) clearInterval(intervalId);
-      intervals[taskId] = null;
-      setTasks((tasks) => {
-        const taskIndex = tasks.findIndex((task) => task.id === taskId);
+    setTasks((tasks) => {
+      const taskIndex = tasks.findIndex((task) => task.id === taskId);
+
+      if (taskIndex === -1) stopPolling(taskId);
+
+      if (taskResult.data.status === "completed") {
+        stopPolling(taskId);
         let left = tasks.slice(0, taskIndex);
         let right = tasks.slice(taskIndex + 1);
         return [
@@ -33,8 +47,9 @@ function App() {
           { ...tasks[taskIndex], status: "completed" },
           ...right,
         ];
-      });
-    }
+      }
+      return tasks;
+    });
   }
 
   async function uploadFile(e: any) {
@@ -81,11 +96,22 @@ function App() {
   function cancelTask(taskId: Task["id"]) {
     setTasks((tasks) => {
       const taskIndex = tasks.findIndex((task) => task.id === taskId);
+      const task: Task = { ...tasks[taskIndex], status: "cancelled" };
+      stopPolling(taskId);
       let left = tasks.slice(0, taskIndex);
       let right = tasks.slice(taskIndex + 1);
-      return [...left, ...right];
+      return [...left, task, ...right];
     });
   }
+
+  // stop polling when component unmounts
+  useEffect(() => {
+    return () => {
+      for (const task of tasks) {
+        stopPolling(task.id);
+      }
+    };
+  });
 
   return (
     <div className="App">
@@ -125,15 +151,14 @@ function App() {
             <tr
               key={task.id}
               style={{
-                backgroundColor:
-                  task.status === "completed" ? "green" : "yellow",
+                backgroundColor: statusColours[task.status],
               }}
             >
               <td>{task.id}</td>
               <td>{task.name}</td>
               <td>{task.status}</td>
               <td>
-                {task.status !== "completed" && (
+                {task.status === "in progress" && (
                   <button
                     title="Cancel this task"
                     onClick={() => cancelTask(task.id)}
