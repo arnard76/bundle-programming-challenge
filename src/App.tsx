@@ -42,8 +42,6 @@ function App() {
       return;
     }
 
-    console.log(fileSelected[0].type);
-
     if (
       !fileSelected[0].type.includes("image/") &&
       !fileSelected[0].type.includes("application/pdf")
