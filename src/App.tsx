@@ -5,10 +5,13 @@ import axios from "axios";
 import { Task } from "./types";
 
 const POLL_INTERVAL = 4000; // in milliseconds
+const MAX_FILE_SIZE = 2; // in megabytes
+const MAX_FILE_SIZE_IN_BYTES = MAX_FILE_SIZE * 1024 * 1024;
 let intervals: { [taskId: Task["id"]]: NodeJS.Timer | null } = {};
 
 function App() {
   const [fileSelected, setFileSelected] = useState<FileList | null>(null);
+  const [error, setError] = useState("");
   const [tasks, setTasks] = useState([] as Task[]);
 
   async function pollTaskStatus(taskId: Task["id"]) {
@@ -34,14 +37,32 @@ function App() {
 
   async function uploadFile(e: any) {
     e.preventDefault();
-    if (!fileSelected) return;
+    if (!fileSelected || !fileSelected.length) {
+      setError("No file selected");
+      return;
+    }
+
+    console.log(fileSelected[0].type);
+
+    if (
+      !fileSelected[0].type.includes("image/") &&
+      !fileSelected[0].type.includes("application/pdf")
+    ) {
+      setError("This file is not a image or a .pdf file");
+      return;
+    }
+
+    if (fileSelected[0].size >= MAX_FILE_SIZE_IN_BYTES) {
+      setError("This file is not under 2MB");
+      return;
+    }
     const result = await axios.get<{ task_id: number }>("/task");
     const taskId = result.data.task_id;
     setTasks([
       ...tasks,
       {
         id: taskId,
-        name: fileSelected.item.name,
+        name: fileSelected[0].name,
         status: "in progress",
       },
     ]);
@@ -73,6 +94,7 @@ function App() {
             Upload
           </button>
         )}
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
 
       <table>
