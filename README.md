@@ -1,4 +1,26 @@
-# Getting Started with Create React App
+# Bundle Coding Challenge - Task Uploads
+
+## Reflection Questions
+
+- What did you choose to mock the API and why?
+  I used [axios-mock-adapter](https://www.npmjs.com/package/axios-mock-adapter) because it was simple enough to implement.
+
+- If you used an AI tool, what parts did it help with?
+  I mostly used Google and occasionally stack overflow to find root causes of any bugs I encountered.
+
+- What tradeoffs or shortcuts did you take?
+  I didn't style as much
+
+- What would you improve or add with more time?
+
+* more styling on the UI
+* cleaner code by splitting into several different files
+
+- What was the trickiest part and how did you debug it?
+
+* Polling took up the most time as I had to do a quick recap of [intervals](https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval)
+
+## Project setup
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
