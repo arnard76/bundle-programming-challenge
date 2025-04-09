@@ -20,7 +20,8 @@ function App() {
     );
 
     if (taskResult.data.status === "completed") {
-      intervals[taskId] && clearInterval(intervals[taskId]);
+      let intervalId = intervals[taskId];
+      if (intervalId !== null) clearInterval(intervalId);
       intervals[taskId] = null;
       setTasks((tasks) => {
         const taskIndex = tasks.findIndex((task) => task.id === taskId);
@@ -54,6 +55,8 @@ function App() {
       setError("This file is not under 2MB");
       return;
     }
+
+    setError("");
     const result = await axios.get<{ task_id: number }>("/task");
     const taskId = result.data.task_id;
     setTasks([
@@ -81,12 +84,13 @@ function App() {
 
   return (
     <div className="App">
-      <form>
+      <form style={{ marginTop: "1rem" }}>
         <input
           type="file"
           onChange={(e) => setFileSelected(e.target.files)}
           accept=".pdf,image/*"
         />
+        <br />
         {fileSelected && (
           <button type="submit" onClick={uploadFile}>
             Upload
@@ -95,23 +99,42 @@ function App() {
         {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
 
-      <table>
+      <h2>Tasks</h2>
+      <table
+        style={{
+          width: "100%",
+          alignItems: "start",
+          textAlign: "start",
+          padding: "1rem",
+        }}
+      >
         <thead>
           <tr>
-            <td>Task Id</td>
-            <td>Task Name</td>
+            <td>ID</td>
+            <td>Name</td>
             <td>Status</td>
           </tr>
         </thead>
         <tbody>
           {tasks.map((task) => (
-            <tr key={task.id}>
+            <tr
+              key={task.id}
+              style={{
+                backgroundColor:
+                  task.status === "completed" ? "green" : "yellow",
+              }}
+            >
               <td>{task.id}</td>
               <td>{task.name}</td>
               <td>{task.status}</td>
               <td>
                 {task.status !== "completed" && (
-                  <button onClick={() => cancelTask(task.id)}>❌</button>
+                  <button
+                    title="Cancel this task"
+                    onClick={() => cancelTask(task.id)}
+                  >
+                    ❌
+                  </button>
                 )}
               </td>
             </tr>
