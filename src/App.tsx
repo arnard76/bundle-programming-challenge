@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import "./App.css";
 import "./mocks";
 import axios from "axios";
@@ -13,6 +13,7 @@ function App() {
   const [fileSelected, setFileSelected] = useState<FileList | null>(null);
   const [error, setError] = useState("");
   const [tasks, setTasks] = useState([] as Task[]);
+  const fileInputRef = useRef<any>(undefined);
 
   async function pollTaskStatus(taskId: Task["id"]) {
     const taskResult = await axios.get<{ status: Task["status"] }>(
@@ -71,6 +72,10 @@ function App() {
     intervals = {
       [taskId]: setInterval(() => pollTaskStatus(taskId), POLL_INTERVAL),
     };
+
+    setFileSelected(null);
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = null;
   }
 
   function cancelTask(taskId: Task["id"]) {
@@ -84,13 +89,14 @@ function App() {
 
   return (
     <div className="App">
+      <h2>Tasks</h2>
       <form style={{ marginTop: "1rem" }}>
         <input
           type="file"
+          ref={fileInputRef}
           onChange={(e) => setFileSelected(e.target.files)}
           accept=".pdf,image/*"
         />
-        <br />
         {fileSelected && (
           <button type="submit" onClick={uploadFile}>
             Upload
@@ -99,7 +105,6 @@ function App() {
         {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
 
-      <h2>Tasks</h2>
       <table
         style={{
           width: "100%",
