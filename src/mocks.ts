@@ -4,11 +4,21 @@ import { Task } from "./types";
 
 const mock = new AxiosMockAdapter(axios);
 
-mock.onGet("/task").reply(200, {
-  task_id: Math.floor(Math.random() * 100),
+mock.onGet("/task").reply(() => {
+  return [
+    200,
+    {
+      task_id: Math.floor(Math.random() * 100),
+    },
+  ];
 });
 
 const taskStatusURL = new RegExp("/status/*");
-mock.onGet(taskStatusURL).reply<{ status: Task["status"] }>(200, {
-  status: Math.random() > 0.8 ? "in progress" : "completed",
+mock.onGet(taskStatusURL).reply<{ status: Task["status"] }>(() => {
+  return [
+    200,
+    {
+      status: Math.random() < 0.6 ? "in progress" : "completed",
+    },
+  ];
 });
